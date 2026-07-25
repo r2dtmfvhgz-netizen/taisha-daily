@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.taisha.daily</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>/Users/wangdapaopaochui/taisha-daily/send_taisha_email.py</string>
+    </array>
+
+    <!-- 每天 9:30 触发 -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>9</integer>
+        <key>Minute</key>
+        <integer>30</integer>
+    </dict>
+
+    <!-- 日志输出 -->
+    <key>StandardOutPath</key>
+    <string>/Users/wangdapaopaochui/taisha-daily/stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/wangdapaopaochui/taisha-daily/stderr.log</string>
+
+    <!-- 工作目录 -->
+    <key>WorkingDirectory</key>
+    <string>/Users/wangdapaopaochui/taisha-daily</string>
+</dict>
+</plist>

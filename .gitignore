@@ -1,0 +1,17 @@
+# 发送记录（本地用，不上传）
+.sent_dates.log
+
+# 日志
+stdout.log
+stderr.log
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+.idea/

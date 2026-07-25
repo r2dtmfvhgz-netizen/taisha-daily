@@ -1,0 +1,27 @@
+name: 每日太傻邮件
+
+on:
+  schedule:
+    # 北京时间 9:30 = UTC 01:30
+    - cron: "30 1 * * *"
+  # 允许手动触发（测试用）
+  workflow_dispatch:
+
+jobs:
+  send-email:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 发送每日邮件
+        env:
+          AUTH_CODE: ${{ secrets.AUTH_CODE }}
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+          RECEIVER_EMAIL: ${{ secrets.RECEIVER_EMAIL }}
+        run: python send_taisha_email.py
