@@ -10,6 +10,8 @@ import os
 import random
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.header import Header
+from email.utils import formataddr
 from datetime import datetime
 from pathlib import Path
 
@@ -416,8 +418,9 @@ def send_email():
     date_str = datetime.now().strftime("%Y年%m月%d日")
 
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = msg_data["subject"]
-    msg["From"] = f"{SENDER_NAME} <{SENDER_EMAIL}>"
+    msg["Subject"] = Header(msg_data["subject"], "utf-8")
+    # 发送者名称用 RFC 2047 编码（QQ 邮箱严格要求）
+    msg["From"] = formataddr((SENDER_NAME, SENDER_EMAIL))
     msg["To"] = RECEIVER_EMAIL
 
     html_content = build_email_html(msg_data, date_str)
