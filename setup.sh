@@ -39,7 +39,7 @@ launchctl unload "$PLIST_DST" 2>/dev/null || true
 
 # 加载新任务
 launchctl load "$PLIST_DST"
-echo "✅ 定时任务已安装（每天 9:30 自动发送）"
+echo "✅ 定时任务已安装（每天 8:30 自动发送）"
 echo ""
 
 # 测试发送
