@@ -2,12 +2,15 @@
 # -*- coding: utf-8 -*-
 """
 太傻天书 · 每日邮件
-每天 9:30 发送一封邮件，包含太傻天书的精髓点拨和常见误解辨析。
+每天 8:30 发送一封邮件，包含太傻天书精髓点拨和常见误解辨析。
+支持：本地 launchd 定时 / GitHub Actions cron / 手动运行
 """
 
 import smtplib
 import os
-import random
+import sys
+import time
+import traceback
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
@@ -454,47 +457,69 @@ def build_email_html(msg, date_str):
     return html
 
 
+def log(msg):
+    """打日志，带时间戳"""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{timestamp}] {msg}", flush=True)
+
+
 def send_email():
-    """发送邮件"""
+    """发送邮件（带重试机制）"""
+    # ---- 检查授权码 ----
     if not AUTH_CODE:
-        print("❌ 未检测到 AUTH_CODE 环境变量，请设置 QQ 邮箱授权码")
-        print("   本地运行：export AUTH_CODE='你的授权码'")
-        print("   GitHub Actions：在仓库 Settings → Secrets → 添加 AUTH_CODE")
-        print("   获取方式：QQ邮箱 → 设置 → 账户 → POP3/SMTP服务 → 开启")
+        log("❌ 未检测到 AUTH_CODE 环境变量")
+        log("   本地运行：export AUTH_CODE='你的QQ邮箱授权码'")
+        log("   或写入 plist 的 EnvironmentVariables 中")
+        log("   GitHub Actions：在仓库 Settings → Secrets → 添加 AUTH_CODE")
         return False
 
+    # ---- 去重检查 ----
     if already_sent_today():
-        print(f"✅ 今天（{get_today_key()}）已经发送过了，跳过")
+        log(f"✅ 今天（{get_today_key()}）已经发送过了，跳过")
         return True
 
+    # ---- 准备邮件内容 ----
     msg_data = pick_message()
     date_str = datetime.now().strftime("%Y年%m月%d日")
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = Header(msg_data["subject"], "utf-8")
-    # 发送者名称用 RFC 2047 编码（QQ 邮箱严格要求）
     msg["From"] = formataddr((SENDER_NAME, SENDER_EMAIL))
     msg["To"] = RECEIVER_EMAIL
+    msg.attach(MIMEText(build_email_html(msg_data, date_str), "html", "utf-8"))
 
-    html_content = build_email_html(msg_data, date_str)
-    msg.attach(MIMEText(html_content, "html", "utf-8"))
+    # ---- 带重试的发送 ----
+    max_retries = 3
+    last_error = None
 
-    try:
-        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
-            server.login(SENDER_EMAIL, AUTH_CODE)
-            server.sendmail(SENDER_EMAIL, [RECEIVER_EMAIL], msg.as_string())
-        mark_sent_today()
-        print(f"✅ 邮件已发送 — {date_str} — {msg_data['subject']}")
-        return True
-    except smtplib.SMTPAuthenticationError:
-        print("❌ 认证失败！请确认：")
-        print("   1. QQ 邮箱已开启 SMTP 服务")
-        print("   2. 使用的是授权码而不是 QQ 密码")
-        print("   3. 授权码没有输错（去掉空格）")
-        return False
-    except Exception as e:
-        print(f"❌ 发送失败: {e}")
-        return False
+    for attempt in range(1, max_retries + 1):
+        try:
+            log(f"📧 正在发送邮件（第 {attempt}/{max_retries} 次）…")
+            with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=30) as server:
+                server.login(SENDER_EMAIL, AUTH_CODE)
+                server.sendmail(SENDER_EMAIL, [RECEIVER_EMAIL], msg.as_string())
+            mark_sent_today()
+            log(f"✅ 发送成功 — {date_str} — {msg_data['subject']}")
+            return True
+
+        except smtplib.SMTPAuthenticationError:
+            log("❌ QQ邮箱认证失败！请确认：")
+            log("   1. QQ邮箱已开启 SMTP 服务（设置→账户→POP3/SMTP）")
+            log("   2. 使用的是「授权码」而不是 QQ 密码")
+            log("   3. 授权码没有过期或输错（去掉空格）")
+            return False  # 认证失败不需要重试
+
+        except Exception as e:
+            last_error = e
+            log(f"⚠️  第 {attempt} 次发送失败: {e}")
+            if attempt < max_retries:
+                wait = attempt * 30
+                log(f"   {wait} 秒后重试…")
+                time.sleep(wait)
+
+    log(f"❌ 全部 {max_retries} 次重试均失败: {last_error}")
+    traceback.print_exc()
+    return False
 
 
 if __name__ == "__main__":

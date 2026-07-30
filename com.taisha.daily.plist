@@ -11,13 +11,20 @@
         <string>/Users/wangdapaopaochui/taisha-daily/send_taisha_email.py</string>
     </array>
 
-    <!-- 每天 9:30 触发 -->
+    <!-- 每天 8:30 触发 -->
     <key>StartCalendarInterval</key>
     <dict>
         <key>Hour</key>
-        <integer>9</integer>
+        <integer>8</integer>
         <key>Minute</key>
         <integer>30</integer>
+    </dict>
+
+    <!-- 环境变量：QQ 邮箱授权码（必填！去 QQ邮箱→设置→账户→POP3/SMTP 获取） -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>AUTH_CODE</key>
+        <string>YOUR_AUTH_CODE_HERE</string>
     </dict>
 
     <!-- 日志输出 -->

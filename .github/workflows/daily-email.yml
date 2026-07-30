@@ -2,8 +2,9 @@ name: 每日太傻邮件
 
 on:
   schedule:
-    # 北京时间每天早上 9:30 = UTC 01:30
-    - cron: "30 1 * * *"
+    # 北京时间每天早上 8:30 = UTC 00:30
+    # 避开 UTC 0-1 点高峰期，减少 cron 延迟
+    - cron: "30 0 * * *"
   workflow_dispatch:
 
 jobs:
